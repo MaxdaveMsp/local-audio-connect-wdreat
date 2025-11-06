@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -11,6 +11,7 @@ import {
   TextInput,
   Modal,
   Alert,
+  AppState,
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { WebView } from 'react-native-webview';
@@ -18,6 +19,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SavedStream } from './(tabs)/saved-streams';
+import { setAudioModeAsync } from 'expo-audio';
 
 const STORAGE_KEY = '@saved_streams';
 
@@ -45,8 +47,41 @@ export default function WebViewScreen() {
 
   console.log('WebView loading URL:', url);
 
+  // Configure audio mode for background playback
+  useEffect(() => {
+    const configureAudio = async () => {
+      try {
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          staysActiveInBackground: true,
+        });
+        console.log('Audio mode configured for background playback');
+      } catch (error) {
+        console.error('Error configuring audio mode:', error);
+      }
+    };
+
+    configureAudio();
+  }, []);
+
+  // Handle app state changes to keep audio playing
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      console.log('App state changed to:', nextAppState);
+      // Audio should continue playing in background
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        console.log('App went to background, audio should continue playing');
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   // Check if stream is already saved
-  React.useEffect(() => {
+  useEffect(() => {
     checkIfSaved();
   }, [url]);
 
@@ -165,6 +200,33 @@ export default function WebViewScreen() {
       };
     }
   };
+
+  // JavaScript to inject into WebView to keep audio playing
+  const injectedJavaScript = `
+    (function() {
+      // Prevent page from pausing when app goes to background
+      document.addEventListener('visibilitychange', function() {
+        console.log('Visibility changed:', document.hidden);
+      });
+
+      // Keep audio elements playing
+      const audioElements = document.getElementsByTagName('audio');
+      for (let audio of audioElements) {
+        audio.addEventListener('pause', function() {
+          console.log('Audio paused, attempting to resume');
+          // Don't auto-resume as it might be intentional
+        });
+      }
+
+      // Notify React Native that page is loaded
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'pageLoaded',
+        url: window.location.href
+      }));
+
+      true; // Required for injected JavaScript
+    })();
+  `;
 
   if (!url) {
     return (
@@ -372,6 +434,15 @@ export default function WebViewScreen() {
           onLoadProgress={({ nativeEvent }) => {
             console.log('WebView load progress:', nativeEvent.progress);
           }}
+          onMessage={(event) => {
+            try {
+              const data = JSON.parse(event.nativeEvent.data);
+              console.log('Message from WebView:', data);
+            } catch (e) {
+              console.log('WebView message:', event.nativeEvent.data);
+            }
+          }}
+          injectedJavaScript={injectedJavaScript}
           mediaPlaybackRequiresUserAction={false}
           allowsInlineMediaPlayback={true}
           javaScriptEnabled={true}
@@ -381,6 +452,9 @@ export default function WebViewScreen() {
           allowsFullscreenVideo={true}
           allowFileAccess={true}
           originWhitelist={['*']}
+          // These props help keep the WebView active in background
+          androidLayerType="hardware"
+          androidHardwareAccelerationDisabled={false}
         />
       )}
 

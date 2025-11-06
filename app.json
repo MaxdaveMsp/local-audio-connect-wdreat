@@ -18,7 +18,10 @@
       "bundleIdentifier": "com.anonymous.Natively",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "This app needs camera access to scan QR codes containing audio stream addresses."
+        "NSCameraUsageDescription": "This app needs camera access to scan QR codes containing audio stream addresses.",
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -45,7 +48,8 @@
         {
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes."
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "scheme": "natively",
     "experiments": {
