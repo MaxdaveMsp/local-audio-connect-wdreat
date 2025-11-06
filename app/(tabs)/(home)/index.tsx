@@ -1,78 +1,58 @@
-import React from "react";
-import { Stack, Link } from "expo-router";
-import { FlatList, Pressable, StyleSheet, View, Text, Alert, Platform } from "react-native";
-import { IconSymbol } from "@/components/IconSymbol";
-import { GlassView } from "expo-glass-effect";
-import { useTheme } from "@react-navigation/native";
 
-const ICON_COLOR = "#007AFF";
+import React, { useState } from "react";
+import { Stack, useRouter } from "expo-router";
+import { 
+  ScrollView, 
+  Pressable, 
+  StyleSheet, 
+  View, 
+  Text, 
+  TextInput,
+  Alert, 
+  Platform,
+  KeyboardAvoidingView 
+} from "react-native";
+import { IconSymbol } from "@/components/IconSymbol";
+import { useTheme } from "@react-navigation/native";
+import { colors, commonStyles } from "@/styles/commonStyles";
 
 export default function HomeScreen() {
   const theme = useTheme();
-  const modalDemos = [
-    {
-      title: "Standard Modal",
-      description: "Full screen modal presentation",
-      route: "/modal",
-      color: "#007AFF",
-    },
-    {
-      title: "Form Sheet",
-      description: "Bottom sheet with detents and grabber",
-      route: "/formsheet",
-      color: "#34C759",
-    },
-    {
-      title: "Transparent Modal",
-      description: "Overlay without obscuring background",
-      route: "/transparent-modal",
-      color: "#FF9500",
-    }
-  ];
+  const router = useRouter();
+  const [ipAddress, setIpAddress] = useState("");
+  const [port, setPort] = useState("");
 
-  const renderModalDemo = ({ item }: { item: (typeof modalDemos)[0] }) => (
-    <GlassView style={[
-      styles.demoCard,
-      Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
-    ]} glassEffectStyle="regular">
-      <View style={[styles.demoIcon, { backgroundColor: item.color }]}>
-        <IconSymbol name="square.grid.3x3" color="white" size={24} />
-      </View>
-      <View style={styles.demoContent}>
-        <Text style={[styles.demoTitle, { color: theme.colors.text }]}>{item.title}</Text>
-        <Text style={[styles.demoDescription, { color: theme.dark ? '#98989D' : '#666' }]}>{item.description}</Text>
-      </View>
-      <Link href={item.route as any} asChild>
-        <Pressable>
-          <GlassView style={[
-            styles.tryButton,
-            Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)' }
-          ]} glassEffectStyle="clear">
-            <Text style={[styles.tryButtonText, { color: theme.colors.primary }]}>Try It</Text>
-          </GlassView>
-        </Pressable>
-      </Link>
-    </GlassView>
-  );
+  const handleConnect = () => {
+    if (!ipAddress.trim()) {
+      Alert.alert("Error", "Please enter an IP address");
+      return;
+    }
+    
+    if (!port.trim()) {
+      Alert.alert("Error", "Please enter a port number");
+      return;
+    }
+
+    const url = `http://${ipAddress.trim()}:${port.trim()}`;
+    console.log("Connecting to:", url);
+    
+    router.push({
+      pathname: "/webview",
+      params: { url }
+    });
+  };
+
+  const handleQRScan = () => {
+    console.log("Opening QR scanner");
+    router.push("/qr-scanner");
+  };
 
   const renderHeaderRight = () => (
     <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
+      onPress={() => Alert.alert("Info", "Enter IP:Port or scan QR code to connect to audio streams")}
       style={styles.headerButtonContainer}
     >
-      <IconSymbol name="plus" color={theme.colors.primary} />
-    </Pressable>
-  );
-
-  const renderHeaderLeft = () => (
-    <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
-      style={styles.headerButtonContainer}
-    >
-      <IconSymbol
-        name="gear"
-        color={theme.colors.primary}
-      />
+      <IconSymbol name="info.circle" color={colors.primary} />
     </Pressable>
   );
 
@@ -81,25 +61,102 @@ export default function HomeScreen() {
       {Platform.OS === 'ios' && (
         <Stack.Screen
           options={{
-            title: "Building the app...",
+            title: "Audio Stream Connect",
             headerRight: renderHeaderRight,
-            headerLeft: renderHeaderLeft,
           }}
         />
       )}
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <FlatList
-          data={modalDemos}
-          renderItem={renderModalDemo}
-          keyExtractor={(item) => item.route}
-          contentContainerStyle={[
-            styles.listContainer,
-            Platform.OS !== 'ios' && styles.listContainerWithTabBar
-          ]}
-          contentInsetAdjustmentBehavior="automatic"
+      <KeyboardAvoidingView 
+        style={[styles.container, { backgroundColor: colors.background }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-        />
-      </View>
+        >
+          <View style={styles.content}>
+            <View style={styles.iconContainer}>
+              <View style={styles.iconCircle}>
+                <IconSymbol name="waveform" color={colors.card} size={48} />
+              </View>
+            </View>
+
+            <Text style={styles.title}>Join Audio Stream</Text>
+            <Text style={styles.subtitle}>
+              Connect to local audio streaming by entering IP and port or scanning a QR code
+            </Text>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Manual Connection</Text>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>IP Address</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., 192.168.1.100"
+                  placeholderTextColor={colors.textSecondary}
+                  value={ipAddress}
+                  onChangeText={setIpAddress}
+                  keyboardType="numeric"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Port</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., 8080"
+                  placeholderTextColor={colors.textSecondary}
+                  value={port}
+                  onChangeText={setPort}
+                  keyboardType="numeric"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              <Pressable 
+                style={[styles.button, styles.primaryButton]}
+                onPress={handleConnect}
+              >
+                <IconSymbol name="play.circle.fill" color={colors.card} size={20} />
+                <Text style={styles.buttonText}>Connect</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>QR Code Scanner</Text>
+              <Text style={styles.cardDescription}>
+                Scan a QR code containing the stream address
+              </Text>
+              
+              <Pressable 
+                style={[styles.button, styles.secondaryButton]}
+                onPress={handleQRScan}
+              >
+                <IconSymbol name="qrcode.viewfinder" color={colors.card} size={20} />
+                <Text style={styles.buttonText}>Scan QR Code</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.infoBox}>
+              <IconSymbol name="lightbulb.fill" color={colors.accent} size={20} />
+              <Text style={styles.infoText}>
+                The QR code should contain the full address (IP:Port) of the audio stream
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </>
   );
 }
@@ -107,55 +164,141 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor handled dynamically
   },
-  listContainer: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+  scrollContent: {
+    flexGrow: 1,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 100,
   },
-  listContainerWithTabBar: {
-    paddingBottom: 100, // Extra padding for floating tab bar
-  },
-  demoCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
+  content: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  demoIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  iconContainer: {
+    marginBottom: 24,
+  },
+  iconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    boxShadow: '0px 4px 12px rgba(0, 122, 255, 0.3)',
+    elevation: 5,
   },
-  demoContent: {
-    flex: 1,
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 8,
+    textAlign: 'center',
   },
-  demoTitle: {
-    fontSize: 18,
+  subtitle: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 32,
+    paddingHorizontal: 20,
+    lineHeight: 22,
+  },
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
+    marginBottom: 16,
+  },
+  cardTitle: {
+    fontSize: 20,
     fontWeight: '600',
-    marginBottom: 4,
-    // color handled dynamically
+    color: colors.text,
+    marginBottom: 8,
   },
-  demoDescription: {
+  cardDescription: {
     fontSize: 14,
-    lineHeight: 18,
-    // color handled dynamically
+    color: colors.textSecondary,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: colors.highlight,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.highlight,
+  },
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    gap: 8,
+  },
+  primaryButton: {
+    backgroundColor: colors.primary,
+  },
+  secondaryButton: {
+    backgroundColor: colors.secondary,
+  },
+  buttonText: {
+    color: colors.card,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.highlight,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 16,
+    width: '100%',
+    gap: 12,
+    marginTop: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
   },
   headerButtonContainer: {
     padding: 6,
-  },
-  tryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  tryButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    // color handled dynamically
   },
 });
