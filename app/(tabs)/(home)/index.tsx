@@ -58,12 +58,6 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-          <View style={styles.iconContainer}>
-            <View style={styles.iconCircle}>
-              <IconSymbol name="waveform" color={colors.card} size={48} />
-            </View>
-          </View>
-
           <Text style={styles.title}>Join Audio Stream</Text>
           <Text style={styles.subtitle}>
             Connect to local audio streaming by entering IP and port or scanning a QR code
@@ -156,19 +150,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconContainer: {
-    marginBottom: 24,
-  },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    boxShadow: '0px 4px 12px rgba(0, 122, 255, 0.3)',
-    elevation: 5,
   },
   title: {
     fontSize: 28,
