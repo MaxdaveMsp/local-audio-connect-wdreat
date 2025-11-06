@@ -47,92 +47,117 @@ export default function HomeScreen() {
     router.push("/qr-scanner");
   };
 
-  return (
-    <KeyboardAvoidingView 
-      style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+  const renderHeaderRight = () => (
+    <Pressable
+      onPress={() => Alert.alert("Info", "Enter IP:Port or scan QR code to connect to audio streams")}
+      style={styles.headerButtonContainer}
     >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <IconSymbol name="info.circle" color={colors.primary} />
+    </Pressable>
+  );
+
+  return (
+    <>
+      {Platform.OS === 'ios' && (
+        <Stack.Screen
+          options={{
+            title: "Audio Stream Connect",
+            headerRight: renderHeaderRight,
+          }}
+        />
+      )}
+      <KeyboardAvoidingView 
+        style={[styles.container, { backgroundColor: colors.background }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.content}>
-          <Text style={styles.title}>Join Audio Stream</Text>
-          <Text style={styles.subtitle}>
-            Connect to local audio streaming by entering IP and port or scanning a QR code
-          </Text>
-
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Manual Connection</Text>
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>IP Address</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., 192.168.1.100"
-                placeholderTextColor={colors.textSecondary}
-                value={ipAddress}
-                onChangeText={setIpAddress}
-                keyboardType="numeric"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            <View style={styles.iconContainer}>
+              <View style={styles.iconCircle}>
+                <IconSymbol name="waveform" color={colors.card} size={48} />
+              </View>
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Port</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., 8080"
-                placeholderTextColor={colors.textSecondary}
-                value={port}
-                onChangeText={setPort}
-                keyboardType="numeric"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+            <Text style={styles.title}>Join Audio Stream</Text>
+            <Text style={styles.subtitle}>
+              Connect to local audio streaming by entering IP and port or scanning a QR code
+            </Text>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Manual Connection</Text>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>IP Address</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., 192.168.1.100"
+                  placeholderTextColor={colors.textSecondary}
+                  value={ipAddress}
+                  onChangeText={setIpAddress}
+                  keyboardType="numeric"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Port</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., 8080"
+                  placeholderTextColor={colors.textSecondary}
+                  value={port}
+                  onChangeText={setPort}
+                  keyboardType="numeric"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              <Pressable 
+                style={[styles.button, styles.primaryButton]}
+                onPress={handleConnect}
+              >
+                <IconSymbol name="play.circle.fill" color={colors.card} size={20} />
+                <Text style={styles.buttonText}>Connect</Text>
+              </Pressable>
             </View>
 
-            <Pressable 
-              style={[styles.button, styles.primaryButton]}
-              onPress={handleConnect}
-            >
-              <IconSymbol name="play.circle.fill" color={colors.card} size={20} />
-              <Text style={styles.buttonText}>Connect</Text>
-            </Pressable>
-          </View>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
-            <View style={styles.dividerLine} />
-          </View>
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>QR Code Scanner</Text>
+              <Text style={styles.cardDescription}>
+                Scan a QR code containing the stream address
+              </Text>
+              
+              <Pressable 
+                style={[styles.button, styles.secondaryButton]}
+                onPress={handleQRScan}
+              >
+                <IconSymbol name="qrcode.viewfinder" color={colors.card} size={20} />
+                <Text style={styles.buttonText}>Scan QR Code</Text>
+              </Pressable>
+            </View>
 
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>QR Code Scanner</Text>
-            <Text style={styles.cardDescription}>
-              Scan a QR code containing the stream address
-            </Text>
-            
-            <Pressable 
-              style={[styles.button, styles.secondaryButton]}
-              onPress={handleQRScan}
-            >
-              <IconSymbol name="qrcode.viewfinder" color={colors.card} size={20} />
-              <Text style={styles.buttonText}>Scan QR Code</Text>
-            </Pressable>
+            <View style={styles.infoBox}>
+              <IconSymbol name="lightbulb.fill" color={colors.accent} size={20} />
+              <Text style={styles.infoText}>
+                The QR code should contain the full address (IP:Port) of the audio stream
+              </Text>
+            </View>
           </View>
-
-          <View style={styles.infoBox}>
-            <IconSymbol name="lightbulb.fill" color={colors.accent} size={20} />
-            <Text style={styles.infoText}>
-              The QR code should contain the full address (IP:Port) of the audio stream
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </>
   );
 }
 
@@ -150,6 +175,19 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconContainer: {
+    marginBottom: 24,
+  },
+  iconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: '0px 4px 12px rgba(0, 122, 255, 0.3)',
+    elevation: 5,
   },
   title: {
     fontSize: 28,
@@ -259,5 +297,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     lineHeight: 20,
+  },
+  headerButtonContainer: {
+    padding: 6,
   },
 });

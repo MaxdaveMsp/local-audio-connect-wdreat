@@ -1,4 +1,3 @@
-
 import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
 
@@ -8,10 +7,8 @@ export default function HomeLayout() {
       <Stack.Screen
         name="index"
         options={{
-          headerShown: Platform.OS === 'ios',
-          title: 'Audio Stream Connect',
-          headerBackVisible: false, // Hide back button
-          headerBackButtonMenuEnabled: false, // Disable back button menu
+          headerShown: Platform.OS === 'ios', // Show header on iOS with NativeTabs, hide on Android/Web
+          title: 'Home'
         }}
       />
     </Stack>
