@@ -7,12 +7,19 @@ import {
   Pressable, 
   ActivityIndicator,
   Platform,
-  ScrollView 
+  ScrollView,
+  TextInput,
+  Modal,
+  Alert,
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SavedStream } from './(tabs)/saved-streams';
+
+const STORAGE_KEY = '@saved_streams';
 
 type ErrorType = 'connection' | 'http' | 'timeout' | 'unknown';
 
@@ -32,8 +39,68 @@ export default function WebViewScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ErrorDetails | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [saveModalVisible, setSaveModalVisible] = useState(false);
+  const [streamName, setStreamName] = useState('');
+  const [isSaved, setIsSaved] = useState(false);
 
   console.log('WebView loading URL:', url);
+
+  // Check if stream is already saved
+  React.useEffect(() => {
+    checkIfSaved();
+  }, [url]);
+
+  const checkIfSaved = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
+      if (jsonValue != null) {
+        const streams: SavedStream[] = JSON.parse(jsonValue);
+        const exists = streams.some((stream) => stream.url === url);
+        setIsSaved(exists);
+      }
+    } catch (e) {
+      console.error('Error checking if saved:', e);
+    }
+  };
+
+  const handleSaveStream = async () => {
+    if (!streamName.trim()) {
+      Alert.alert('Error', 'Please enter a name for this stream');
+      return;
+    }
+
+    try {
+      const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
+      const streams: SavedStream[] = jsonValue != null ? JSON.parse(jsonValue) : [];
+
+      // Check if already exists
+      const exists = streams.some((stream) => stream.url === url);
+      if (exists) {
+        Alert.alert('Already Saved', 'This stream is already in your saved list');
+        setSaveModalVisible(false);
+        return;
+      }
+
+      const newStream: SavedStream = {
+        id: Date.now().toString(),
+        name: streamName.trim(),
+        url: url,
+        createdAt: new Date().toISOString(),
+      };
+
+      streams.unshift(newStream); // Add to beginning of array
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(streams));
+      
+      console.log('Stream saved successfully:', newStream.name);
+      setIsSaved(true);
+      setSaveModalVisible(false);
+      setStreamName('');
+      Alert.alert('Success', 'Stream saved successfully!');
+    } catch (e) {
+      console.error('Error saving stream:', e);
+      Alert.alert('Error', 'Failed to save stream');
+    }
+  };
 
   const handleGoBack = () => {
     router.back();
@@ -155,9 +222,24 @@ export default function WebViewScreen() {
           title: 'Audio Stream',
           headerBackVisible: true,
           headerRight: () => (
-            <Pressable onPress={handleReload} style={styles.headerButton}>
-              <IconSymbol name="arrow.clockwise" color={colors.primary} size={20} />
-            </Pressable>
+            <View style={styles.headerButtons}>
+              {!isSaved && (
+                <Pressable 
+                  onPress={() => setSaveModalVisible(true)} 
+                  style={styles.headerButton}
+                >
+                  <IconSymbol name="bookmark" color={colors.primary} size={20} />
+                </Pressable>
+              )}
+              {isSaved && (
+                <View style={styles.headerButton}>
+                  <IconSymbol name="bookmark.fill" color={colors.primary} size={20} />
+                </View>
+              )}
+              <Pressable onPress={handleReload} style={styles.headerButton}>
+                <IconSymbol name="arrow.clockwise" color={colors.primary} size={20} />
+              </Pressable>
+            </View>
           ),
         }}
       />
@@ -301,6 +383,57 @@ export default function WebViewScreen() {
           originWhitelist={['*']}
         />
       )}
+
+      {/* Save Stream Modal */}
+      <Modal
+        visible={saveModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSaveModalVisible(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setSaveModalVisible(false)}
+        >
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+            <IconSymbol name="bookmark.fill" color={colors.primary} size={48} />
+            <Text style={styles.modalTitle}>Save Stream</Text>
+            <Text style={styles.modalSubtitle}>
+              Give this stream a name for easy access later
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="e.g., Living Room Audio"
+              placeholderTextColor={colors.textSecondary}
+              value={streamName}
+              onChangeText={setStreamName}
+              autoFocus
+              autoCapitalize="words"
+            />
+            <Text style={styles.modalUrlLabel}>URL:</Text>
+            <Text style={styles.modalUrl} numberOfLines={2}>
+              {url}
+            </Text>
+            <View style={styles.modalButtons}>
+              <Pressable
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => {
+                  setSaveModalVisible(false);
+                  setStreamName('');
+                }}
+              >
+                <Text style={styles.modalButtonTextCancel}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.modalButtonSave]}
+                onPress={handleSaveStream}
+              >
+                <Text style={styles.modalButtonTextSave}>Save</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -459,7 +592,93 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   headerButton: {
     padding: 6,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.2)',
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  modalInput: {
+    backgroundColor: colors.highlight,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: 16,
+    width: '100%',
+  },
+  modalUrlLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
+  modalUrl: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 20,
+    width: '100%',
+    lineHeight: 18,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: colors.highlight,
+  },
+  modalButtonSave: {
+    backgroundColor: colors.primary,
+  },
+  modalButtonTextCancel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  modalButtonTextSave: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.card,
   },
 });
