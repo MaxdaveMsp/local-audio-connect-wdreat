@@ -20,12 +20,6 @@ export default function TabLayout() {
       icon: 'bookmark.fill',
       label: 'Saved',
     },
-    {
-      name: 'profile',
-      route: '/(tabs)/profile',
-      icon: 'person.fill',
-      label: 'Profile',
-    },
   ];
 
   // Use NativeTabs for iOS, custom FloatingTabBar for Android and Web
@@ -39,10 +33,6 @@ export default function TabLayout() {
         <NativeTabs.Trigger name="saved-streams">
           <Icon sf="bookmark.fill" drawable="ic_bookmark" />
           <Label>Saved</Label>
-        </NativeTabs.Trigger>
-        <NativeTabs.Trigger name="profile">
-          <Icon sf="person.fill" drawable="ic_profile" />
-          <Label>Profile</Label>
         </NativeTabs.Trigger>
       </NativeTabs>
     );
