@@ -1,4 +1,3 @@
-
 import "react-native-reanimated";
 import React, { useEffect } from "react";
 import { useFonts } from "expo-font";
@@ -80,7 +79,7 @@ export default function RootLayout() {
   };
   return (
     <>
-      <StatusBar style="auto" animated hidden={false} />
+      <StatusBar style="auto" animated />
         <ThemeProvider
           value={colorScheme === "dark" ? CustomDarkTheme : CustomDefaultTheme}
         >
@@ -113,22 +112,6 @@ export default function RootLayout() {
                 options={{
                   presentation: "transparentModal",
                   headerShown: false,
-                }}
-              />
-              {/* QR Scanner Screen */}
-              <Stack.Screen
-                name="qr-scanner"
-                options={{
-                  headerShown: true,
-                  title: "Scan QR Code",
-                }}
-              />
-              {/* WebView Screen */}
-              <Stack.Screen
-                name="webview"
-                options={{
-                  headerShown: true,
-                  title: "Audio Stream",
                 }}
               />
             </Stack>
