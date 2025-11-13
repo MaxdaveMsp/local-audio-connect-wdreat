@@ -1,8 +1,7 @@
-
 {
   "expo": {
-    "name": "StreamConnect",
-    "slug": "streamconnect",
+    "name": "local-audio-connect-wdreat",
+    "slug": "local-audio-connect-wdreat",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/final_quest_240x240.png",
@@ -31,11 +30,12 @@
         "backgroundColor": "#1a1a2e"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.streamconnect.app",
+      "package": "com.loudandbeyond.local-audio-stream",
       "versionCode": 1,
       "permissions": [
         "android.permission.CAMERA"
-      ]
+      ],
+      "usesCleartextTraffic": true
     },
     "web": {
       "favicon": "./assets/images/final_quest_240x240.png",
